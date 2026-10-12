@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Register a business, add stock and complete a sale",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "custom HttpOnly Secure SameSite=Lax sessions",
+      "Managing Director default role",
+      "product create and barcode/SKU uniqueness",
+      "sales checkout and receipt number",
+      "stock deduction and movement ledger",
+      "customer visit and dashboard totals",
+      "8-character minimum with uppercase lowercase number and special character",
+      "password visibility toggle and live strength meter"
+    ],
+    "description": "Proves the primary retail workflow persists sales and inventory movement.",
+    "steps": [
+      "Create the first account with a valid name, email and password meeting all five password requirements",
+      "Add product SKU-A1 with barcode 10001, price 15, stock 8 and reorder level 3",
+      "Record a cash sale of 2 units",
+      "Open sales and stock movements, then refresh"
+    ],
+    "expected": "Registration accepts a compliant password, rejects a password missing any required character class, and the primary retail workflow persists sales and inventory movement."
+  },
+  {
+    "name": "Create a supplier and receive a purchase order",
+    "viewport": "desktop",
+    "covers": [
+      "supplier creation",
+      "purchase order creation",
+      "Draft to Ordered to Received state transitions",
+      "receiving updates stock and stock movement ledger"
+    ],
+    "description": "Checks procurement records and the stock receipt lifecycle.",
+    "steps": [
+      "Sign in as Managing Director",
+      "Add supplier North Star Supplies",
+      "Create a purchase order for 5 units of a product",
+      "Order the PO then receive it",
+      "Refresh inventory and purchase orders"
+    ],
+    "expected": "The PO reaches Received, inventory increases by 5 and an IN stock movement is recorded."
+  },
+  {
+    "name": "Role permissions deny unauthorized financial and team actions",
+    "viewport": "desktop",
+    "covers": [
+      "role-based server authorization",
+      "team member creation by Managing Director",
+      "Sales Agent cannot create expenses or products",
+      "team access disable and session rejection"
+    ],
+    "description": "Verifies permissions are enforced by backend routes, not only hidden controls.",
+    "steps": [
+      "As Managing Director add a Sales Agent with a compliant password meeting all password requirements",
+      "Sign in as the Sales Agent",
+      "Attempt to add a product and record an expense",
+      "Disable the agent from the Managing Director account"
+    ],
+    "expected": "Unauthorized product and expense writes return 403, and disabled accounts cannot continue using the workspace."
+  },
+  {
+    "name": "Record an expense and issue an invoice",
+    "viewport": "desktop",
+    "covers": [
+      "expense validation and persistence",
+      "invoice generation and status tracking",
+      "invoice printing",
+      "mark invoice paid",
+      "report revenue expenses gross profit and receivables"
+    ],
+    "description": "Checks financial records feed management reporting and printable documents.",
+    "steps": [
+      "Record a transport expense of 45 GHS",
+      "Create an invoice for a customer and 2 items at 20 GHS each",
+      "Print the invoice and mark it Paid",
+      "Open Reports and refresh"
+    ],
+    "expected": "Expense and invoice persist, invoice total is 40 GHS, paid invoice no longer contributes to receivables and report totals update."
+  },
+  {
+    "name": "Use barcode search and stock controls on mobile",
+    "viewport": "mobile",
+    "covers": [
+      "barcode/SKU lookup",
+      "manual stock adjustment validation",
+      "responsive navigation and forms",
+      "invoice/receipt print action"
+    ],
+    "description": "Verifies core warehouse and sales tools remain usable on a phone.",
+    "steps": [
+      "Sign in on mobile",
+      "Open Inventory and enter an existing SKU in the barcode search",
+      "Open Stock movements and adjust stock with a reason",
+      "Open Sales and print a receipt"
+    ],
+    "expected": "The product is found by SKU, stock adjustment is audited and the layout remains usable on a 375px screen."
+  },
+  {
+    "name": "Manage personal profile and account security",
+    "viewport": "mobile",
+    "covers": [
+      "profile menu and avatar fallback",
+      "update personal display name email and avatar URL",
+      "change password with current-password verification",
+      "CSRF-protected personal account endpoints",
+      "logout from profile menu",
+      "password visibility controls",
+      "live password strength meter and rule checklist",
+      "password complexity enforced server-side"
+    ],
+    "description": "Verifies personal account management remains available independently of business-role permissions.",
+    "steps": [
+      "Sign in with a valid account and open the profile menu",
+      "Open My profile, update the display name and optionally an HTTPS profile image URL, then save",
+      "Confirm the updated name and avatar appear in the menu after refresh",
+      "Open Security, enter the current password and a new password of at least 8 characters containing uppercase, lowercase, number and special character; use visibility toggle and check the live strength meter",
+      "Sign out from the profile menu and confirm the sign-in screen appears"
+    ],
+    "expected": "Profile details persist, the avatar image or initials fallback displays correctly, password changes require the current password and all password complexity rules, the strength meter updates live, and logout clears the session."
+  }
+]
