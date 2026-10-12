@@ -1,5 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '@appdeploy/client';
+
+const api = {
+  async get(path: string) {
+    const response = await fetch(path, { credentials: 'include' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw Object.assign(new Error(data.error || 'Request failed'), { response: { data } });
+    return { data };
+  },
+  async post(path: string, body: Record<string, unknown> = {}) {
+    const response = await fetch(path, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw Object.assign(new Error(data.error || 'Request failed'), { response: { data } });
+    return { data };
+  },
+};
 import { Boxes, LayoutDashboard, Package, ShoppingCart, Users, Truck, ClipboardList, Wallet, FileText, BarChart3, ShieldCheck, LogOut, Plus, Search, ScanBarcode, Printer, RefreshCw, X, LockKeyhole, ChevronDown, UserRound, KeyRound } from 'lucide-react';
 
 type Row = Record<string, any>;
