@@ -1,24 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-
-const api = {
-  async get(path: string) {
-    const response = await fetch(path, { credentials: 'include' });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw Object.assign(new Error(data.error || 'Request failed'), { response: { data } });
-    return { data };
-  },
-  async post(path: string, body: Record<string, unknown> = {}) {
-    const response = await fetch(path, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw Object.assign(new Error(data.error || 'Request failed'), { response: { data } });
-    return { data };
-  },
-};
+import { api, setCsrfToken } from './lib/api';
 import { Boxes, LayoutDashboard, Package, ShoppingCart, Users, Truck, ClipboardList, Wallet, FileText, BarChart3, ShieldCheck, LogOut, Plus, Search, ScanBarcode, Printer, RefreshCw, X, LockKeyhole, ChevronDown, UserRound, KeyRound } from 'lucide-react';
 
 type Row = Record<string, any>;
@@ -48,11 +29,11 @@ export default function App() {
  const canWrite=(key:string)=>!!user&&((permissions[user.role||'Sales Agent']||[]).includes('*')||(permissions[user.role||'Sales Agent']||[]).includes(key));
  async function sendPost(path:string,body:Row={}) { return api['post'](path,{...body,...(csrf?{_csrf:csrf}:{})}); }
  async function refresh() {
-  const r=await api.get('/api/shop/bootstrap'); setUser(r.data.user);setProfileForm({name:r.data.user.name||'',email:r.data.user.email||'',avatarUrl:r.data.user.avatarUrl||''});setStats(r.data.stats);setData(r.data.data);setCsrf(r.data.csrfToken);
+  const r=await api.get('/api/shop/bootstrap'); setUser(r.data.user);setProfileForm({name:r.data.user.name||'',email:r.data.user.email||'',avatarUrl:r.data.user.avatarUrl||''});setStats(r.data.stats);setData(r.data.data);setCsrf(r.data.csrfToken);setCsrfToken(r.data.csrfToken);
  }
- useEffect(()=>{api.get('/api/auth/session').then(async r=>{if(r.data.authenticated){setCsrf(r.data.csrfToken);await refresh()}}).catch(()=>{});},[]);
- async function authSubmit(e:any){e.preventDefault();if(mode==='forgot'){try{await api.post('/api/auth/forgot-password',{email:auth.email});setMode('reset');setNotice('If the account exists, enter the recovery token sent to the registered email.')}catch(e:any){setNotice(e?.message||'Recovery request failed')}return}if(mode==='reset'){if(!validPassword(auth.password)){setNotice('Password must be at least 8 characters and include uppercase, lowercase, a number and a special character.');return}try{await api.post('/api/auth/reset-password',{email:auth.email,token:auth.token,newPassword:auth.password});setMode('login');setAuth({name:'',email:auth.email,password:'',token:''});setNotice('Password reset. Sign in with your new password.')}catch(e:any){setNotice(e?.message||'Reset request is invalid or expired')}return}if(mode==='register'&&!validPassword(auth.password)){setNotice('Password must be at least 8 characters and include uppercase, lowercase, a number and a special character.');return}try{const r=await sendPost('/api/auth/'+mode,auth);setCsrf(r.data.csrfToken);await refresh();setNotice('Welcome to ShopFlow')}catch(e:any){setNotice(e?.message||'Authentication failed')}}
- async function logout(){try{await sendPost('/api/auth/logout',{_csrf:csrf})}catch{}setAccountMenu(false);setProfileOpen(false);setUser(null);setData({});setCsrf('');setMode('login')}
+ useEffect(()=>{api.get('/api/auth/session').then(async r=>{if(r.data.authenticated){setCsrf(r.data.csrfToken);setCsrfToken(r.data.csrfToken);await refresh()}}).catch(()=>{});},[]);
+ async function authSubmit(e:any){e.preventDefault();if(mode==='forgot'){try{await api.post('/api/auth/forgot-password',{email:auth.email});setMode('reset');setNotice('If the account exists, enter the recovery token sent to the registered email.')}catch(e:any){setNotice(e?.message||'Recovery request failed')}return}if(mode==='reset'){if(!validPassword(auth.password)){setNotice('Password must be at least 8 characters and include uppercase, lowercase, a number and a special character.');return}try{await api.post('/api/auth/reset-password',{email:auth.email,token:auth.token,newPassword:auth.password});setMode('login');setAuth({name:'',email:auth.email,password:'',token:''});setNotice('Password reset. Sign in with your new password.')}catch(e:any){setNotice(e?.message||'Reset request is invalid or expired')}return}if(mode==='register'&&!validPassword(auth.password)){setNotice('Password must be at least 8 characters and include uppercase, lowercase, a number and a special character.');return}try{const r=await sendPost('/api/auth/'+mode,auth);setCsrf(r.data.csrfToken);setCsrfToken(r.data.csrfToken);await refresh();setNotice('Welcome to ShopFlow')}catch(e:any){setNotice(e?.message||'Authentication failed')}}
+ async function logout(){try{await sendPost('/api/auth/logout',{_csrf:csrf})}catch{}setAccountMenu(false);setProfileOpen(false);setUser(null);setData({});setCsrf('');setCsrfToken('');setMode('login')}
  function openProfile(){setProfileForm({name:user?.name||'',email:user?.email||'',avatarUrl:user?.avatarUrl||''});setPasswordForm({currentPassword:'',newPassword:'',confirmPassword:''});setAccountMenu(false);setProfileOpen(true)}
  async function saveProfile(e:any){e.preventDefault();setProfileBusy(true);try{const r=await sendPost('/api/auth/profile',profileForm);setUser((old:Row|null)=>old?{...old,...r.data.user}:old);setNotice('Profile updated successfully');await refresh()}catch(e:any){setNotice(e?.response?.data?.error||e?.message||'Profile could not be updated')}finally{setProfileBusy(false)}}
  async function savePassword(e:any){e.preventDefault();if(!validPassword(passwordForm.newPassword)){setNotice('Password must be at least 8 characters and include uppercase, lowercase, a number and a special character.');return}if(passwordForm.newPassword!==passwordForm.confirmPassword){setNotice('New passwords do not match');return}setProfileBusy(true);try{await sendPost('/api/auth/password',{currentPassword:passwordForm.currentPassword,newPassword:passwordForm.newPassword});setPasswordForm({currentPassword:'',newPassword:'',confirmPassword:''});setNotice('Password changed successfully. Other sessions were signed out.')}catch(e:any){setNotice(e?.response?.data?.error||e?.message||'Password could not be changed')}finally{setProfileBusy(false)}}
@@ -68,7 +49,7 @@ export default function App() {
  const actionTitle:Record<string,string>={product:'Add inventory item',sale:'New sale / checkout',supplier:'Add supplier',purchase:'Create purchase order',expense:'Record expense',invoice:'Create invoice',team:'Add team member',stock:'Adjust stock'};
  const submitModal=async(e:any)=>{e.preventDefault();if(modal==='team'&&!validPassword(String(form.password||''))){setNotice('Temporary password must be at least 8 characters and include uppercase, lowercase, a number and a special character.');return}setBusy(true);try{
   const route:Record<string,string>={product:'/api/shop/products',sale:'/api/shop/sales',supplier:'/api/shop/suppliers',purchase:'/api/shop/purchases',expense:'/api/shop/expenses',invoice:'/api/shop/invoices',team:'/api/shop/team',stock:'/api/shop/stock'};
-  const payload={...form,_csrf:csrf}; if(form.productId&&typeof form.productId==='string'&&form.productId.includes('|'))payload.productId=form.productId.split('|')[0];if(form.supplierId&&String(form.supplierId).includes('|'))payload.supplierId=String(form.supplierId).split('|')[0];
+  const payload: Row={...form,_csrf:csrf}; if(form.productId&&typeof form.productId==='string'&&form.productId.includes('|'))payload.productId=form.productId.split('|')[0];if(form.supplierId&&String(form.supplierId).includes('|'))payload.supplierId=String(form.supplierId).split('|')[0];
   if(modal==='sale')payload.qty=Number(form.qty||1); if(modal==='purchase'||modal==='stock')payload.qty=Number(form.qty||0);
   if(modal==='product'){payload.price=Number(form.price);payload.cost=Number(form.cost||0);payload.stock=Number(form.stock||0);payload.reorderLevel=Number(form.reorderLevel||5)}
   if(modal==='expense')payload.amount=Number(form.amount);
