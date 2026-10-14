@@ -1,4 +1,5 @@
-import { db, ws, json, error } from '@appdeploy/sdk';
+import { ws, json, error } from '@appdeploy/sdk';
+import { supabaseDb as db } from './supabase-adapter';
 
 const SUBSCRIPTIONS_TABLE = 'entity_subscriptions';
 

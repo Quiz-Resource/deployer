@@ -5,7 +5,7 @@ type ListOptions = { limit?: number; offset?: number; eq?: Record<string, string
 
 const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY
-const allowedTables = new Set(['users', 'sessions', 'password_reset_tokens', 'products', 'sales', 'customers', 'suppliers', 'purchases', 'expenses', 'invoices', 'stock_moves', 'change_requests', 'audit_log'])
+const allowedTables = new Set(['users', 'sessions', 'password_reset_tokens', 'products', 'sales', 'customers', 'suppliers', 'purchases', 'expenses', 'invoices', 'stock_moves', 'change_requests', 'audit_log', 'entity_subscriptions'])
 
 if (!url || !key) throw new Error('Supabase server credentials are not configured.')
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY) throw new Error('A server-only Supabase secret is required.')
