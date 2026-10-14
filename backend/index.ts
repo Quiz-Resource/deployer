@@ -1,4 +1,5 @@
-import { router, json, db } from '@appdeploy/sdk';
+import { router, json } from '@appdeploy/sdk';
+import { supabaseDb as db } from './supabase-adapter';
 
 type User = { name:string; email:string; passwordHash:string; role:string; active:boolean; createdAt:string; ownerId:string; avatarUrl?:string };
 type Session = { userId:string; csrfToken:string; expiresAt:number };
