@@ -1,10 +1,18 @@
+import { MAX_GET_RETRIES, REQUEST_TIMEOUT_MS, RETRYABLE_HTTP_STATUS } from './constants'
+
 export type ApiError = Error & { status?: number; code?: string; response?: { data?: unknown } }
 
 type JsonRecord = Record<string, unknown>
 
 let csrfToken = ''
-const REQUEST_TIMEOUT_MS = 20_000
-const RETRYABLE_STATUS = new Set([408, 425, 429, 502, 503, 504])
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
+}
+
+function wait(ms: number) {
+  return new Promise<void>(resolve => window.setTimeout(resolve, ms))
+}
 
 export function setCsrfToken(token: string) {
   csrfToken = token
@@ -26,7 +34,9 @@ async function request<T = unknown>(path: string, init: RequestInit = {}): Promi
   let attempt = 0
   while (true) {
     const controller = new AbortController()
-    const signal = init.signal || controller.signal
+    const signal = init.signal
+      ? AbortSignal.any([init.signal, controller.signal])
+      : controller.signal
     const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
     try {
       const response = await fetch(path, { ...init, method, headers, credentials: 'include', signal })
@@ -37,19 +47,19 @@ async function request<T = unknown>(path: string, init: RequestInit = {}): Promi
           code: typeof data.code === 'string' ? data.code : undefined,
           response: { data },
         }) as ApiError
-        if (method === 'GET' && RETRYABLE_STATUS.has(response.status) && attempt < 2) {
+        if (method === 'GET' && RETRYABLE_HTTP_STATUS.has(response.status) && attempt < MAX_GET_RETRIES) {
           attempt += 1
-          await new Promise(resolve => window.setTimeout(resolve, 250 * 2 ** attempt))
+          await wait(250 * 2 ** attempt)
           continue
         }
         throw error
       }
       return { data: data as T }
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') throw new Error('The request timed out. Please try again.')
-      if (method === 'GET' && attempt < 2 && !(error as ApiError)?.status) {
+      if (isAbortError(error)) throw new Error('The request timed out. Please try again.')
+      if (method === 'GET' && attempt < MAX_GET_RETRIES && !(error as ApiError)?.status) {
         attempt += 1
-        await new Promise(resolve => window.setTimeout(resolve, 250 * 2 ** attempt))
+        await wait(250 * 2 ** attempt)
         continue
       }
       throw error
