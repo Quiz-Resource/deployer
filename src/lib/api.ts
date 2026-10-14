@@ -6,6 +6,9 @@ type JsonRecord = Record<string, unknown>
 
 let csrfToken = ''
 
+const env = (import.meta as ImportMeta & { env: Record<string, string | undefined> }).env
+const apiBaseUrl = (env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
 }
@@ -39,7 +42,7 @@ async function request<T = unknown>(path: string, init: RequestInit = {}): Promi
       : controller.signal
     const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
     try {
-      const response = await fetch(path, { ...init, method, headers, credentials: 'include', signal })
+      const response = await fetch(`${apiBaseUrl}${path}`, { ...init, method, headers, credentials: 'include', signal })
       const data = await response.json().catch(() => ({})) as JsonRecord
       if (!response.ok) {
         const error = Object.assign(new Error(String(data.error || 'Request failed')), {
